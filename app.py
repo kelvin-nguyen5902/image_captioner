@@ -102,7 +102,7 @@ h1, h2, h3, h4, h5, h6 {
     border: 1px solid rgba(255, 43, 43, 0.4);
     border-radius: 0.5rem;
     padding: 1rem;
-    color: #ffffff !important;
+    color: #b00000 !important;
     font-family: 'Orbitron', monospace;
 }
 .caption-box {
