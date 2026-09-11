@@ -56,7 +56,7 @@ st.markdown("""
 .stApp {
     background: #ffffff;
 }
-h1, h2, h3, h4, h5, h6 {
+.main h1, .main h2, .main h3, .main h4, .main h5, .main h6 {
     font-family: 'Orbitron', monospace !important;
     color: #000000 !important;
 }
@@ -132,7 +132,7 @@ h1, h2, h3, h4, h5, h6 {
     color: #000000 !important;
     font-size: 2rem !important;
 }
-p, li, div {
+.main p, .main li, .main div {
     color: #000000 !important;
 }
 .stMarkdown {
