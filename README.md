@@ -32,7 +32,13 @@ Interactive UI available at: https://image-captioner-znx9.onrender.com/ .
 docker compose up -d --build
 ```
 
-2. Open http://localhost:8501
+2. Open
+
+3. To stop running, run from the root folder:
+
+```bash
+docker compose down
+```
 
 ## Project Structure
 
