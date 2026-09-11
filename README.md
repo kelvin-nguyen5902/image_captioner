@@ -1,7 +1,7 @@
 # Image Captioning AI
 
 An image captioning AI model using attention based Seq2Seq architecture.
-Interactive UI available at: https://image-captioner-znx9.onrender.com/
+Interactive UI available at: https://image-captioner-znx9.onrender.com/ <br/>
 Warning: Due to tight memory usage limits, the server might be down if there is high network traffic. If this is the case, you can run the UI locally (instructions below).
 
 ## Model Details
