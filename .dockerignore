@@ -1,0 +1,9 @@
+.git
+.gitignore
+README.md
+*.ipynb
+__pycache__
+*.pyc
+.venv
+venv
+.DS_Store

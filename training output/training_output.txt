@@ -1,0 +1,174 @@
+
+Epoch 1/30
+Training: 100%|██████████| 1987/1987 [28:20<00:00,  1.17it/s]
+Validation: 100%|██████████| 497/497 [01:57<00:00,  4.22it/s]
+Train Loss: 3.8021 | Val Loss: 3.1195
+Model saved!
+
+Epoch 2/30
+Training: 100%|██████████| 1987/1987 [28:05<00:00,  1.18it/s]
+Validation: 100%|██████████| 497/497 [02:10<00:00,  3.80it/s]
+Train Loss: 3.1589 | Val Loss: 2.8389
+Model saved!
+
+Epoch 3/30
+Training: 100%|██████████| 1987/1987 [27:35<00:00,  1.20it/s]
+Validation: 100%|██████████| 497/497 [02:04<00:00,  4.00it/s]
+Train Loss: 2.9547 | Val Loss: 2.6744
+Model saved!
+
+Epoch 4/30
+Training: 100%|██████████| 1987/1987 [23:40<00:00,  1.40it/s]
+Validation: 100%|██████████| 497/497 [01:48<00:00,  4.58it/s]
+Train Loss: 2.8236 | Val Loss: 2.5638
+Model saved!
+
+Epoch 5/30
+Training: 100%|██████████| 1987/1987 [24:51<00:00,  1.33it/s]
+Validation: 100%|██████████| 497/497 [02:04<00:00,  3.98it/s]
+Train Loss: 2.7268 | Val Loss: 2.4799
+Model saved!
+
+Epoch 6/30
+Training: 100%|██████████| 1987/1987 [26:51<00:00,  1.23it/s]
+Validation: 100%|██████████| 497/497 [02:06<00:00,  3.92it/s]
+Train Loss: 2.6491 | Val Loss: 2.4076
+Model saved!
+
+Epoch 7/30
+Training: 100%|██████████| 1987/1987 [26:27<00:00,  1.25it/s]
+Validation: 100%|██████████| 497/497 [01:59<00:00,  4.16it/s]
+Train Loss: 2.5838 | Val Loss: 2.3477
+Model saved!
+
+Epoch 8/30
+Training: 100%|██████████| 1987/1987 [26:07<00:00,  1.27it/s]
+Validation: 100%|██████████| 497/497 [01:55<00:00,  4.29it/s]
+Train Loss: 2.5289 | Val Loss: 2.2972
+Model saved!
+
+Epoch 9/30
+Training: 100%|██████████| 1987/1987 [25:05<00:00,  1.32it/s]
+Validation: 100%|██████████| 497/497 [02:01<00:00,  4.07it/s]
+Train Loss: 2.4816 | Val Loss: 2.2570
+Model saved!
+
+Epoch 10/30
+Training: 100%|██████████| 1987/1987 [25:40<00:00,  1.29it/s]
+Validation: 100%|██████████| 497/497 [02:05<00:00,  3.96it/s]
+Train Loss: 2.4388 | Val Loss: 2.2180
+Model saved!
+
+Epoch 11/30
+Training: 100%|██████████| 1987/1987 [25:38<00:00,  1.29it/s]
+Validation: 100%|██████████| 497/497 [01:59<00:00,  4.16it/s]
+Train Loss: 2.4029 | Val Loss: 2.1850
+Model saved!
+
+Epoch 12/30
+Training: 100%|██████████| 1987/1987 [26:27<00:00,  1.25it/s]
+Validation: 100%|██████████| 497/497 [01:53<00:00,  4.37it/s]
+Train Loss: 2.3715 | Val Loss: 2.1575
+Model saved!
+
+Epoch 13/30
+Training: 100%|██████████| 1987/1987 [1:10:46<00:00,  2.14s/it]    
+Validation: 100%|██████████| 497/497 [02:01<00:00,  4.08it/s]
+Train Loss: 2.3420 | Val Loss: 2.1360
+Model saved!
+
+Epoch 14/30
+Training: 100%|██████████| 1987/1987 [28:05<00:00,  1.18it/s]
+Validation: 100%|██████████| 497/497 [02:34<00:00,  3.22it/s]
+Train Loss: 2.3136 | Val Loss: 2.1029
+Model saved!
+
+Epoch 15/30
+Training: 100%|██████████| 1987/1987 [29:04<00:00,  1.14it/s]
+Validation: 100%|██████████| 497/497 [02:09<00:00,  3.85it/s]
+Train Loss: 2.2892 | Val Loss: 2.0855
+Model saved!
+
+Epoch 16/30
+Training: 100%|██████████| 1987/1987 [27:33<00:00,  1.20it/s]
+Validation: 100%|██████████| 497/497 [02:01<00:00,  4.11it/s]
+Train Loss: 2.2670 | Val Loss: 2.0661
+Model saved!
+
+Epoch 17/30
+Training: 100%|██████████| 1987/1987 [27:31<00:00,  1.20it/s]
+Validation: 100%|██████████| 497/497 [02:00<00:00,  4.11it/s]
+Train Loss: 2.2469 | Val Loss: 2.0472
+Model saved!
+
+Epoch 18/30
+Training: 100%|██████████| 1987/1987 [26:40<00:00,  1.24it/s]
+Validation: 100%|██████████| 497/497 [02:03<00:00,  4.03it/s]
+Train Loss: 2.2298 | Val Loss: 2.0348
+Model saved!
+
+Epoch 19/30
+Training: 100%|██████████| 1987/1987 [1:13:43<00:00,  2.23s/it]   
+Validation: 100%|██████████| 497/497 [19:19<00:00,  2.33s/it]    
+Train Loss: 2.2130 | Val Loss: 2.0173
+Model saved!
+
+Epoch 20/30
+Training: 100%|██████████| 1987/1987 [2:42:48<00:00,  4.92s/it]    
+Validation: 100%|██████████| 497/497 [01:58<00:00,  4.19it/s]
+Train Loss: 2.1956 | Val Loss: 2.0122
+Model saved!
+
+Epoch 21/30
+Training: 100%|██████████| 1987/1987 [30:12<00:00,  1.10it/s]  
+Validation: 100%|██████████| 497/497 [01:54<00:00,  4.33it/s]
+Train Loss: 2.1819 | Val Loss: 1.9954
+Model saved!
+
+Epoch 22/30
+Training: 100%|██████████| 1987/1987 [24:51<00:00,  1.33it/s]
+Validation: 100%|██████████| 497/497 [01:55<00:00,  4.31it/s]
+Train Loss: 2.1694 | Val Loss: 1.9813
+Model saved!
+
+Epoch 23/30
+Training: 100%|██████████| 1987/1987 [28:09<00:00,  1.18it/s]
+Validation: 100%|██████████| 497/497 [02:18<00:00,  3.58it/s]
+Train Loss: 2.1553 | Val Loss: 1.9704
+Model saved!
+
+Epoch 24/30
+Training: 100%|██████████| 1987/1987 [29:17<00:00,  1.13it/s]
+Validation: 100%|██████████| 497/497 [02:18<00:00,  3.59it/s]
+Train Loss: 2.1453 | Val Loss: 1.9621
+Model saved!
+
+Epoch 25/30
+Training: 100%|██████████| 1987/1987 [30:25<00:00,  1.09it/s]
+Validation: 100%|██████████| 497/497 [02:16<00:00,  3.63it/s]
+Train Loss: 2.1345 | Val Loss: 1.9514
+Model saved!
+
+Epoch 26/30
+Training: 100%|██████████| 1987/1987 [33:12<00:00,  1.00s/it]
+Validation: 100%|██████████| 497/497 [02:34<00:00,  3.21it/s]
+Train Loss: 2.1228 | Val Loss: 1.9482
+Model saved!
+
+Epoch 27/30
+Training: 100%|██████████| 1987/1987 [33:27<00:00,  1.01s/it]
+Validation: 100%|██████████| 497/497 [02:21<00:00,  3.51it/s]
+Train Loss: 2.1145 | Val Loss: 1.9384
+Model saved!
+
+Epoch 28/30
+Training: 100%|██████████| 1987/1987 [35:27<00:00,  1.07s/it] 
+Validation: 100%|██████████| 497/497 [02:42<00:00,  3.05it/s]
+Train Loss: 2.1049 | Val Loss: 1.9303
+Model saved!
+
+Epoch 29/30
+Training:   4%|▎         | 74/1987 [01:36<41:39,  1.31s/it]  
+
+--- ERROR ---
+KeyboardInterrupt: 
