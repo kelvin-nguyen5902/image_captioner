@@ -7,6 +7,30 @@ from PIL import Image
 import pickle
 import matplotlib.pyplot as plt
 import numpy as np
+import time
+import threading
+from collections import deque
+
+RATE_LIMIT_MAX_REQUESTS = 5
+RATE_LIMIT_WINDOW_SECONDS = 60
+
+# Shared across all sessions in this process, keyed by client IP.
+_ip_request_log = {}
+_ip_request_log_lock = threading.Lock()
+
+
+def check_rate_limit():
+    """Global, IP-based sliding-window rate limit. Returns (allowed, seconds_to_wait)."""
+    ip = st.context.ip_address or "unknown"
+    now = time.time()
+    with _ip_request_log_lock:
+        timestamps = _ip_request_log.setdefault(ip, deque())
+        while timestamps and now - timestamps[0] > RATE_LIMIT_WINDOW_SECONDS:
+            timestamps.popleft()
+        if len(timestamps) >= RATE_LIMIT_MAX_REQUESTS:
+            return False, RATE_LIMIT_WINDOW_SECONDS - (now - timestamps[0])
+        timestamps.append(now)
+        return True, 0
 
 st.set_page_config(page_title="Image Captioner", layout="wide", initial_sidebar_state="collapsed")
 
@@ -322,8 +346,21 @@ else:
                     st.image(image, caption="UPLOADED IMAGE", width='stretch')
         with col2:
             if uploaded_file and is_valid_image:
-                with st.spinner("Generating caption..."):
-                    greedy_caption, beam_caption = generate_caption(image, model, word2idx, idx2word, max_length, device)
+                file_id = getattr(uploaded_file, "file_id", f"{uploaded_file.name}:{uploaded_file.size}")
+                if st.session_state.get("cached_file_id") == file_id:
+                    greedy_caption, beam_caption = st.session_state.cached_captions
+                else:
+                    allowed, wait_seconds = check_rate_limit()
+                    if not allowed:
+                        st.error(
+                            f"Can only upload {RATE_LIMIT_MAX_REQUESTS} images per "
+                            f"{RATE_LIMIT_WINDOW_SECONDS} seconds. Try again in {wait_seconds:.0f}s."
+                        )
+                        st.stop()
+                    with st.spinner("Generating caption..."):
+                        greedy_caption, beam_caption = generate_caption(image, model, word2idx, idx2word, max_length, device)
+                    st.session_state.cached_file_id = file_id
+                    st.session_state.cached_captions = (greedy_caption, beam_caption)
                 st.markdown(f'<div class="caption-box"><b>GREEDY CAPTION:</b><br><br>{greedy_caption}</div>', unsafe_allow_html=True)
                 st.markdown(f'<div class="caption-box"><b>BEAM SEARCH CAPTION:</b><br><br>{beam_caption}</div>', unsafe_allow_html=True)
     
