@@ -445,13 +445,15 @@ else:
                     turn_event = _queue_join()
                     if not turn_event.is_set():
                         queue_placeholder = st.empty()
+                        last_shown_position = None
                         while not turn_event.wait(timeout=0.25):
                             position = _queue_position(turn_event)
-                            if position:
+                            if position and position != last_shown_position:
                                 queue_placeholder.warning(
                                     "Generating caption... this might take a while since there are "
                                     f"currently other users also generating captions. You are number {position} in the queue."
                                 )
+                                last_shown_position = position
                         queue_placeholder.empty()
                     try:
                         with st.spinner("Generating caption..."):
