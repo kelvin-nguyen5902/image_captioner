@@ -97,6 +97,14 @@ h1, h2, h3, h4, h5, h6 {
 .metric-card h4 {
     color: #000000 !important;
 }
+.rate-limit-error {
+    background: rgba(255, 43, 43, 0.09);
+    border: 1px solid rgba(255, 43, 43, 0.4);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    color: #ffffff !important;
+    font-family: 'Orbitron', monospace;
+}
 .caption-box {
     background: #f5f5f5;
     padding: 20px;
@@ -339,7 +347,7 @@ else:
 
                 if detected_format not in ALLOWED_FORMATS:
                     label = f".{detected_format.lower()}" if detected_format else "This"
-                    st.error(f"Only JPG or PNG images are allowed")
+                    st.error(f"'{label}' files are not allowed. Please upload a JPG or PNG image.")
                 else:
                     is_valid_image = True
                     image = image.convert('RGB')
@@ -352,9 +360,11 @@ else:
                 else:
                     allowed, wait_seconds = check_rate_limit()
                     if not allowed:
-                        st.error(
-                            f"Can only upload {RATE_LIMIT_MAX_REQUESTS} images per "
-                            f"{RATE_LIMIT_WINDOW_SECONDS} seconds. Try again in {wait_seconds:.0f}s."
+                        st.markdown(
+                            f'<div class="rate-limit-error">Can only upload '
+                            f'{RATE_LIMIT_MAX_REQUESTS} images per {RATE_LIMIT_WINDOW_SECONDS} '
+                            f'seconds. Try again in {wait_seconds:.0f}s.</div>',
+                            unsafe_allow_html=True,
                         )
                         st.stop()
                     with st.spinner("Generating caption..."):
