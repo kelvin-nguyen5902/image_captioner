@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import time
 import threading
+import uuid
 from collections import deque
 
 RATE_LIMIT_MAX_REQUESTS = 5
@@ -329,21 +330,35 @@ def _get_inference_queue():
     waiter its own Event, woken explicitly in arrival order."""
     return {"waiting": deque(), "holder": None}, threading.Lock()
 
-def _queue_join():
+def _get_session_token():
+    """Stable per-browser-session id, independent of which file is currently
+    uploaded, so the queue can recognize 'this is the same session's earlier,
+    now-superseded request' even though its file_id changes with every upload."""
+    if "session_token" not in st.session_state:
+        st.session_state.session_token = str(uuid.uuid4())
+    return st.session_state.session_token
+
+def _queue_join(session_token):
     state, meta_lock = _get_inference_queue()
     event = threading.Event()
     with meta_lock:
+        # Drop any older, not-yet-started request from this same session --
+        # it's already been superseded and would otherwise waste a turn
+        # without ever being used.
+        state["waiting"] = deque(
+            (tok, evt) for tok, evt in state["waiting"] if tok != session_token
+        )
         if state["holder"] is None and not state["waiting"]:
             state["holder"] = event
             event.set()
         else:
-            state["waiting"].append(event)
+            state["waiting"].append((session_token, event))
     return event
 
 def _queue_position(event):
     state, meta_lock = _get_inference_queue()
     with meta_lock:
-        for i, waiting_event in enumerate(state["waiting"]):
+        for i, (_tok, waiting_event) in enumerate(state["waiting"]):
             if waiting_event is event:
                 return i + 1
         return 0
@@ -353,16 +368,15 @@ def _queue_leave(event):
     with meta_lock:
         if state["holder"] is event:
             if state["waiting"]:
-                next_event = state["waiting"].popleft()
+                _next_token, next_event = state["waiting"].popleft()
                 state["holder"] = next_event
                 next_event.set()
             else:
                 state["holder"] = None
         else:
-            try:
-                state["waiting"].remove(event)
-            except ValueError:
-                pass
+            state["waiting"] = deque(
+                (tok, evt) for tok, evt in state["waiting"] if evt is not event
+            )
 
 def generate_caption(image, model, word2idx, idx2word, max_length, device, file_id):
     def is_stale():
@@ -442,20 +456,20 @@ else:
                             f"{RATE_LIMIT_WINDOW_SECONDS} seconds. Try again in {wait_seconds:.0f}s."
                         )
                         st.stop()
-                    turn_event = _queue_join()
-                    if not turn_event.is_set():
-                        queue_placeholder = st.empty()
-                        last_shown_position = None
-                        while not turn_event.wait(timeout=0.25):
-                            position = _queue_position(turn_event)
-                            if position and position != last_shown_position:
-                                queue_placeholder.warning(
-                                    "Generating caption... this might take a while since there are "
-                                    f"currently other users also generating captions. You are number {position} in the queue."
-                                )
-                                last_shown_position = position
-                        queue_placeholder.empty()
+                    turn_event = _queue_join(_get_session_token())
                     try:
+                        if not turn_event.is_set():
+                            queue_placeholder = st.empty()
+                            last_shown_position = None
+                            while not turn_event.wait(timeout=0.25):
+                                position = _queue_position(turn_event)
+                                if position and position != last_shown_position:
+                                    queue_placeholder.warning(
+                                        "Generating caption... this might take a while since there are "
+                                        f"currently other users also generating captions. You are number {position} in the queue."
+                                    )
+                                    last_shown_position = position
+                            queue_placeholder.empty()
                         with st.spinner("Generating caption..."):
                             greedy_caption, beam_caption = generate_caption(image, model, word2idx, idx2word, max_length, device, file_id)
                     finally:
