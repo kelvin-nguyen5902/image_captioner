@@ -347,7 +347,7 @@ else:
 
                 if detected_format not in ALLOWED_FORMATS:
                     label = f".{detected_format.lower()}" if detected_format else "This"
-                    st.error(f"'{label}' files are not allowed. Please upload a JPG or PNG image.")
+                    st.error(f"Please upload a JPG or PNG image.")
                 else:
                     is_valid_image = True
                     image = image.convert('RGB')
