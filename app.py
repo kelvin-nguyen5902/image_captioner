@@ -457,21 +457,37 @@ else:
                         )
                         st.stop()
                     turn_event = _queue_join(_get_session_token())
+                    was_dequeued = False
                     try:
                         if not turn_event.is_set():
                             queue_placeholder = st.empty()
                             last_shown_position = None
                             while not turn_event.wait(timeout=0.25):
                                 position = _queue_position(turn_event)
-                                if position and position != last_shown_position:
+                                if position == 0:
+                                    # No longer in the waiting line and never became
+                                    # the holder -- a newer upload from this same
+                                    # session superseded us before our turn came up.
+                                    # Stop polling now instead of looping forever:
+                                    # once removed, turn_event will never be set and
+                                    # position will never be nonzero again, so this
+                                    # loop would otherwise never reach a Streamlit
+                                    # yield point and keep this script run (and its
+                                    # held image buffer) alive indefinitely.
+                                    was_dequeued = True
+                                    break
+                                if position != last_shown_position:
                                     queue_placeholder.warning(
                                         "Generating caption... this might take a while since there are "
                                         f"currently other users also generating captions. You are number {position} in the queue."
                                     )
                                     last_shown_position = position
                             queue_placeholder.empty()
-                        with st.spinner("Generating caption..."):
-                            greedy_caption, beam_caption = generate_caption(image, model, word2idx, idx2word, max_length, device, file_id)
+                        if was_dequeued:
+                            greedy_caption, beam_caption = None, None
+                        else:
+                            with st.spinner("Generating caption..."):
+                                greedy_caption, beam_caption = generate_caption(image, model, word2idx, idx2word, max_length, device, file_id)
                     finally:
                         _queue_leave(turn_event)
                     if greedy_caption is None:
