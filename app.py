@@ -449,7 +449,8 @@ else:
                             position = _queue_position(turn_event)
                             if position:
                                 queue_placeholder.warning(
-                                    f"There are other users generating images. You are number {position} in the queue."
+                                    "Generating caption... this might take a while since there are "
+                                    f"currently other users also generating captions. You are number {position} in the queue."
                                 )
                         queue_placeholder.empty()
                     try:
