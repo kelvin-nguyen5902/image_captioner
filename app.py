@@ -31,6 +31,10 @@ def check_rate_limit():
     now = time.time()
     ip_request_log, lock = _get_rate_limit_store()
     with lock:
+        # Drop stale IPs (window already expired) so the log doesn't grow forever.
+        for logged_ip in [k for k, v in ip_request_log.items() if not v or now - v[-1] > RATE_LIMIT_WINDOW_SECONDS]:
+            del ip_request_log[logged_ip]
+
         timestamps = ip_request_log.setdefault(ip, deque())
         while timestamps and now - timestamps[0] > RATE_LIMIT_WINDOW_SECONDS:
             timestamps.popleft()
@@ -301,6 +305,13 @@ def load_model():
     except:
         return None, None, None, None, None
 
+@st.cache_resource
+def load_resnet_encoder(device):
+    resnet = models.resnet50(weights=models.ResNet50_Weights.DEFAULT)
+    resnet = nn.Sequential(*list(resnet.children())[:-2]).to(device)
+    resnet.eval()
+    return resnet
+
 def generate_caption(image, model, word2idx, idx2word, max_length, device):
     transform = transforms.Compose([
         transforms.Resize((224, 224)),
@@ -308,9 +319,7 @@ def generate_caption(image, model, word2idx, idx2word, max_length, device):
         transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
     ])
     img_tensor = transform(image).unsqueeze(0).to(device)
-    resnet = models.resnet50(weights=models.ResNet50_Weights.DEFAULT)
-    resnet = nn.Sequential(*list(resnet.children())[:-2]).to(device)
-    resnet.eval()
+    resnet = load_resnet_encoder(device)
     with torch.no_grad():
         feats = resnet(img_tensor)
         features = feats.permute(0, 2, 3, 1).reshape(feats.size(0), -1, 2048)
