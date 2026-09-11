@@ -249,7 +249,7 @@ class Seq2SeqAttentionModel(nn.Module):
         outputs = self.decoder(encoder_out, captions)
         return outputs
 
-def greedy_search(model, image_features, max_length, start_token, end_token, device='cpu'):
+def greedy_search(model, image_features, max_length, start_token, end_token, device='cpu', is_stale=None):
     model.eval()
     with torch.no_grad():
         encoder_out = model.encoder(image_features)
@@ -259,19 +259,23 @@ def greedy_search(model, image_features, max_length, start_token, end_token, dev
         for _ in range(max_length):
             if sequence[-1] == end_token:
                 break
+            if is_stale is not None and is_stale():
+                return None
             preds, h, c, _ = model.decoder.forward_step(encoder_out, h, c, current_word)
             next_word = preds.argmax(dim=1).item()
             sequence.append(next_word)
             current_word = torch.tensor([next_word]).to(device)
         return sequence
 
-def beam_search(model, image_features, max_length, start_token, end_token, idx2word, beam_width=3, device='cpu'):
+def beam_search(model, image_features, max_length, start_token, end_token, idx2word, beam_width=3, device='cpu', is_stale=None):
     model.eval()
     with torch.no_grad():
         encoder_out = model.encoder(image_features)
         h, c = model.decoder.init_hidden_state(encoder_out)
         sequences = [[[start_token], 0.0, h, c]]
         for _ in range(max_length):
+            if is_stale is not None and is_stale():
+                return None
             all_candidates = []
             for seq, score, h_state, c_state in sequences:
                 if seq[-1] == end_token:
@@ -316,13 +320,57 @@ def load_resnet_encoder(device):
     return resnet
 
 @st.cache_resource
-def _get_inference_lock():
-    """Serializes generate_caption() across all concurrent sessions in this
-    process, so simultaneous uploads don't each add their own ResNet50/LSTM
-    activation memory on top of the shared baseline at the same time."""
-    return threading.Lock()
+def _get_inference_queue():
+    """Strict FIFO queue serializing generate_caption() across all concurrent
+    sessions in this process, so simultaneous uploads don't each add their own
+    ResNet50/LSTM activation memory on top of the shared baseline at the same
+    time. A plain threading.Lock doesn't guarantee FIFO wake order for waiters,
+    which would make a displayed queue position inaccurate -- this hands each
+    waiter its own Event, woken explicitly in arrival order."""
+    return {"waiting": deque(), "holder": None}, threading.Lock()
 
-def generate_caption(image, model, word2idx, idx2word, max_length, device):
+def _queue_join():
+    state, meta_lock = _get_inference_queue()
+    event = threading.Event()
+    with meta_lock:
+        if state["holder"] is None and not state["waiting"]:
+            state["holder"] = event
+            event.set()
+        else:
+            state["waiting"].append(event)
+    return event
+
+def _queue_position(event):
+    state, meta_lock = _get_inference_queue()
+    with meta_lock:
+        for i, waiting_event in enumerate(state["waiting"]):
+            if waiting_event is event:
+                return i + 1
+        return 0
+
+def _queue_leave(event):
+    state, meta_lock = _get_inference_queue()
+    with meta_lock:
+        if state["holder"] is event:
+            if state["waiting"]:
+                next_event = state["waiting"].popleft()
+                state["holder"] = next_event
+                next_event.set()
+            else:
+                state["holder"] = None
+        else:
+            try:
+                state["waiting"].remove(event)
+            except ValueError:
+                pass
+
+def generate_caption(image, model, word2idx, idx2word, max_length, device, file_id):
+    def is_stale():
+        return st.session_state.get("active_upload_id") != file_id
+
+    if is_stale():
+        return None, None
+
     transform = transforms.Compose([
         transforms.Resize((224, 224)),
         transforms.ToTensor(),
@@ -331,17 +379,25 @@ def generate_caption(image, model, word2idx, idx2word, max_length, device):
     img_tensor = transform(image).unsqueeze(0).to(device)
     resnet = load_resnet_encoder(device)
 
-    with _get_inference_lock():
-        with torch.no_grad():
-            feats = resnet(img_tensor)
-            features = feats.permute(0, 2, 3, 1).reshape(feats.size(0), -1, 2048)
+    if is_stale():
+        return None, None
 
-        def to_words(indices):
-            return ' '.join([idx2word[idx] for idx in indices if idx not in [0, word2idx['<start>'], word2idx['<end>']]])
+    with torch.no_grad():
+        feats = resnet(img_tensor)
+        features = feats.permute(0, 2, 3, 1).reshape(feats.size(0), -1, 2048)
 
-        greedy_indices = greedy_search(model, features, max_length, word2idx['<start>'], word2idx['<end>'], device=device)
-        beam_indices = beam_search(model, features, max_length, word2idx['<start>'], word2idx['<end>'], idx2word, beam_width=5, device=device)
-        return to_words(greedy_indices), to_words(beam_indices)
+    def to_words(indices):
+        return ' '.join([idx2word[idx] for idx in indices if idx not in [0, word2idx['<start>'], word2idx['<end>']]])
+
+    greedy_indices = greedy_search(model, features, max_length, word2idx['<start>'], word2idx['<end>'], device=device, is_stale=is_stale)
+    if greedy_indices is None:
+        return None, None
+
+    beam_indices = beam_search(model, features, max_length, word2idx['<start>'], word2idx['<end>'], idx2word, beam_width=5, device=device, is_stale=is_stale)
+    if beam_indices is None:
+        return None, None
+
+    return to_words(greedy_indices), to_words(beam_indices)
 
 st.title("Image Captioner")
 
@@ -375,6 +431,7 @@ else:
         with col2:
             if uploaded_file and is_valid_image:
                 file_id = getattr(uploaded_file, "file_id", f"{uploaded_file.name}:{uploaded_file.size}")
+                st.session_state.active_upload_id = file_id
                 if st.session_state.get("cached_file_id") == file_id:
                     greedy_caption, beam_caption = st.session_state.cached_captions
                 else:
@@ -385,8 +442,23 @@ else:
                             f"{RATE_LIMIT_WINDOW_SECONDS} seconds. Try again in {wait_seconds:.0f}s."
                         )
                         st.stop()
-                    with st.spinner("Generating caption..."):
-                        greedy_caption, beam_caption = generate_caption(image, model, word2idx, idx2word, max_length, device)
+                    turn_event = _queue_join()
+                    if not turn_event.is_set():
+                        queue_placeholder = st.empty()
+                        while not turn_event.wait(timeout=0.25):
+                            position = _queue_position(turn_event)
+                            if position:
+                                queue_placeholder.warning(
+                                    f"There are other users generating images. You are number {position} in the queue."
+                                )
+                        queue_placeholder.empty()
+                    try:
+                        with st.spinner("Generating caption..."):
+                            greedy_caption, beam_caption = generate_caption(image, model, word2idx, idx2word, max_length, device, file_id)
+                    finally:
+                        _queue_leave(turn_event)
+                    if greedy_caption is None:
+                        st.stop()
                     st.session_state.cached_file_id = file_id
                     st.session_state.cached_captions = (greedy_caption, beam_caption)
                 st.markdown(f'<div class="caption-box"><b>GREEDY CAPTION:</b><br><br>{greedy_caption}</div>', unsafe_allow_html=True)
