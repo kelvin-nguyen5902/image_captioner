@@ -14,17 +14,24 @@ from collections import deque
 RATE_LIMIT_MAX_REQUESTS = 5
 RATE_LIMIT_WINDOW_SECONDS = 60
 
-# Shared across all sessions in this process, keyed by client IP.
-_ip_request_log = {}
-_ip_request_log_lock = threading.Lock()
+@st.cache_resource
+def _get_rate_limit_store():
+    """Shared across all sessions in this process, keyed by client IP.
+
+    Streamlit re-executes this module on every rerun, so a plain module-level
+    dict gets reset on each interaction. st.cache_resource persists the
+    returned object across reruns instead.
+    """
+    return {}, threading.Lock()
 
 
 def check_rate_limit():
     """Global, IP-based sliding-window rate limit. Returns (allowed, seconds_to_wait)."""
     ip = st.context.ip_address or "unknown"
     now = time.time()
-    with _ip_request_log_lock:
-        timestamps = _ip_request_log.setdefault(ip, deque())
+    ip_request_log, lock = _get_rate_limit_store()
+    with lock:
+        timestamps = ip_request_log.setdefault(ip, deque())
         while timestamps and now - timestamps[0] > RATE_LIMIT_WINDOW_SECONDS:
             timestamps.popleft()
         if len(timestamps) >= RATE_LIMIT_MAX_REQUESTS:
@@ -96,14 +103,6 @@ h1, h2, h3, h4, h5, h6 {
 }
 .metric-card h4 {
     color: #000000 !important;
-}
-.rate-limit-error {
-    background: rgba(255, 43, 43, 0.09);
-    border: 1px solid rgba(255, 43, 43, 0.4);
-    border-radius: 0.5rem;
-    padding: 1rem;
-    color: #b00000 !important;
-    font-family: 'Orbitron', monospace;
 }
 .caption-box {
     background: #f5f5f5;
@@ -360,11 +359,9 @@ else:
                 else:
                     allowed, wait_seconds = check_rate_limit()
                     if not allowed:
-                        st.markdown(
-                            f'<div class="rate-limit-error">Can only upload '
-                            f'{RATE_LIMIT_MAX_REQUESTS} images per {RATE_LIMIT_WINDOW_SECONDS} '
-                            f'seconds. Try again in {wait_seconds:.0f}s.</div>',
-                            unsafe_allow_html=True,
+                        st.error(
+                            f"Can only upload {RATE_LIMIT_MAX_REQUESTS} images per "
+                            f"{RATE_LIMIT_WINDOW_SECONDS} seconds. Try again in {wait_seconds:.0f}s."
                         )
                         st.stop()
                     with st.spinner("Generating caption..."):
