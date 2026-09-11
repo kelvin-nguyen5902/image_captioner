@@ -56,7 +56,7 @@ st.markdown("""
 .stApp {
     background: #ffffff;
 }
-.main h1, .main h2, .main h3, .main h4, .main h5, .main h6 {
+h1, h2, h3, h4, h5, h6 {
     font-family: 'Orbitron', monospace !important;
     color: #000000 !important;
 }
@@ -132,7 +132,7 @@ st.markdown("""
     color: #000000 !important;
     font-size: 2rem !important;
 }
-.main p, .main li, .main div {
+p, li, div {
     color: #000000 !important;
 }
 .stMarkdown {
@@ -160,6 +160,9 @@ st.markdown("""
 }
 hr {
     border-color: #d0d0d0 !important;
+}
+[role="dialog"] {
+    background: #e6f2ff !important;
 }
 [data-testid="stHeader"] {
     display: none;
