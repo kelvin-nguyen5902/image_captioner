@@ -312,6 +312,13 @@ def load_resnet_encoder(device):
     resnet.eval()
     return resnet
 
+@st.cache_resource
+def _get_inference_lock():
+    """Serializes generate_caption() across all concurrent sessions in this
+    process, so simultaneous uploads don't each add their own ResNet50/LSTM
+    activation memory on top of the shared baseline at the same time."""
+    return threading.Lock()
+
 def generate_caption(image, model, word2idx, idx2word, max_length, device):
     transform = transforms.Compose([
         transforms.Resize((224, 224)),
@@ -320,16 +327,18 @@ def generate_caption(image, model, word2idx, idx2word, max_length, device):
     ])
     img_tensor = transform(image).unsqueeze(0).to(device)
     resnet = load_resnet_encoder(device)
-    with torch.no_grad():
-        feats = resnet(img_tensor)
-        features = feats.permute(0, 2, 3, 1).reshape(feats.size(0), -1, 2048)
 
-    def to_words(indices):
-        return ' '.join([idx2word[idx] for idx in indices if idx not in [0, word2idx['<start>'], word2idx['<end>']]])
+    with _get_inference_lock():
+        with torch.no_grad():
+            feats = resnet(img_tensor)
+            features = feats.permute(0, 2, 3, 1).reshape(feats.size(0), -1, 2048)
 
-    greedy_indices = greedy_search(model, features, max_length, word2idx['<start>'], word2idx['<end>'], device=device)
-    beam_indices = beam_search(model, features, max_length, word2idx['<start>'], word2idx['<end>'], idx2word, beam_width=5, device=device)
-    return to_words(greedy_indices), to_words(beam_indices)
+        def to_words(indices):
+            return ' '.join([idx2word[idx] for idx in indices if idx not in [0, word2idx['<start>'], word2idx['<end>']]])
+
+        greedy_indices = greedy_search(model, features, max_length, word2idx['<start>'], word2idx['<end>'], device=device)
+        beam_indices = beam_search(model, features, max_length, word2idx['<start>'], word2idx['<end>'], idx2word, beam_width=5, device=device)
+        return to_words(greedy_indices), to_words(beam_indices)
 
 st.title("Image Captioner")
 
