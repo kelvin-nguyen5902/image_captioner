@@ -1,8 +1,16 @@
-# Image Captioning App
+# Image Captioning AI
 
-An AI image captioning web app using attention based Seq2Seq architecture.
+An image captioning AI model using attention based Seq2Seq architecture.
+Interactive UI available at: https://image-captioner-znx9.onrender.com/
 
-## Features
+## Model Details
+
+- **Architecture**: ResNet50 (spatial features) Encoder + Attention + LSTM Decoder
+- **Dataset**: Flickr30k (31,783 images)
+- **BLEU-4 Score**: 0.3793 (Beam Search), 0.3087(Greedy search)
+- **Vocabulary**: 7,689 words
+
+## Site Features
 
 - Real-time AI caption generation
 - Model performance metrics
@@ -22,13 +30,6 @@ docker compose up -d --build
 ```
 
 2. Open http://localhost:8501
-
-## Model Details
-
-- **Architecture**: ResNet50 (spatial features) Encoder + Attention + LSTM Decoder
-- **Dataset**: Flickr30k (31,783 images)
-- **BLEU-4 Score**: 0.3793 (Beam Search), 0.3087(Greedy search)
-- **Vocabulary**: 7,689 words
 
 ## Project Structure
 
